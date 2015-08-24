@@ -55,7 +55,7 @@ public interface LwM2mServer {
      * Send a Lightweight M2M request synchronously. Will block until a response is received from the remote client.
      */
     <T extends LwM2mResponse> T send(Client destination, DownlinkRequest<T> request);
-
+    
     /**
      * Send a Lightweight M2M request asynchronously.
      */

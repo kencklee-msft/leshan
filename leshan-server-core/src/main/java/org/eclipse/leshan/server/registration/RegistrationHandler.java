@@ -56,9 +56,10 @@ public class RegistrationHandler {
         if (registerRequest.getEndpointName() == null || registerRequest.getEndpointName().isEmpty()) {
             return new RegisterResponse(ResponseCode.BAD_REQUEST);
         } else {
-            // register
-            String registrationId = RegistrationHandler.createRegistrationId();
-
+        	// register
+        	// String registrationId = RegistrationHandler.createRegistrationId();
+        	String registrationId = registerRequest.getEndpointName();
+        	
             // do we have security information for this client?
             SecurityInfo securityInfo = securityStore.getByEndpoint(registerRequest.getEndpointName());
 

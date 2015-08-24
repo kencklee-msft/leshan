@@ -24,6 +24,7 @@ import java.util.Set;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.network.CoAPEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
+import org.eclipse.californium.core.server.resources.Resource;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
 import org.eclipse.leshan.core.request.DownlinkRequest;
@@ -154,6 +155,58 @@ public class LeshanServer implements LwM2mServer {
         requestSender = new CaliforniumLwM2mRequestSender(endpoints, this.clientRegistry, this.observationRegistry,
                 modelProvider, COAP_REQUEST_TIMEOUT_MILLIS);
     }
+    
+    // dirty added
+    public LeshanServer(Endpoint endpoint, Endpoint secureEndpoint,
+    		final Resource resource,
+            final ClientRegistry clientRegistry, final SecurityRegistry securityRegistry,
+            final ObservationRegistry observationRegistry, final LwM2mModelProvider modelProvider) {
+        //Validate.notNull(localAddress, "IP address cannot be null");
+        //Validate.notNull(localAddressSecure, "Secure IP address cannot be null");
+        Validate.notNull(clientRegistry, "clientRegistry cannot be null");
+        Validate.notNull(securityRegistry, "securityRegistry cannot be null");
+        Validate.notNull(observationRegistry, "observationRegistry cannot be null");
+        Validate.notNull(modelProvider, "modelProvider cannot be null");
+
+        // Init registries
+        this.clientRegistry = clientRegistry;
+        this.securityRegistry = securityRegistry;
+        this.observationRegistry = observationRegistry;
+
+        this.modelProvider = modelProvider;
+
+        // Cancel observations on client unregistering
+        this.clientRegistry.addListener(new ClientRegistryListener() {
+
+            @Override
+            public void updated(final Client clientUpdated) {
+            }
+
+            @Override
+            public void unregistered(final Client client) {
+                LeshanServer.this.observationRegistry.cancelObservations(client);
+            }
+
+            @Override
+            public void registered(final Client client) {
+            }
+        });
+
+        coapServer = new CoapServer();
+        coapServer.addEndpoint(endpoint);
+        coapServer.addEndpoint(secureEndpoint);
+
+        // define /rd resource
+        coapServer.add(resource);
+
+        // create sender
+        final Set<Endpoint> endpoints = new HashSet<>();
+        endpoints.add(endpoint);
+        endpoints.add(secureEndpoint);
+        // TODO add a way to set timeout.
+        requestSender = new CaliforniumLwM2mRequestSender(endpoints, this.clientRegistry, this.observationRegistry,
+                modelProvider, COAP_REQUEST_TIMEOUT_MILLIS);
+    }
 
     @Override
     public void start() {
@@ -242,7 +295,7 @@ public class LeshanServer implements LwM2mServer {
             final ResponseConsumer<T> responseCallback, final ExceptionConsumer errorCallback) {
         requestSender.send(destination, request, responseCallback, errorCallback);
     }
-
+    
     /**
      * @return the underlying {@link CoapServer}
      */
