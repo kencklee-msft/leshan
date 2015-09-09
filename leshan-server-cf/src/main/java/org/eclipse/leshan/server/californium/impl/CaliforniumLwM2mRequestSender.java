@@ -94,7 +94,7 @@ public class CaliforniumLwM2mRequestSender implements LwM2mRequestSender {
         // Wait for response, then return it
         return syncMessageObserver.waitForResponse();
     }
-
+    
     @Override
     public <T extends LwM2mResponse> void send(final Client destination, final DownlinkRequest<T> request,
             final ResponseCallback<T> responseCallback, final ErrorCallback errorCallback) {
@@ -123,7 +123,7 @@ public class CaliforniumLwM2mRequestSender implements LwM2mRequestSender {
         final Endpoint endpoint = getEndpointForClient(destination);
         endpoint.sendRequest(coapRequest);
     }
-
+    
     /**
      * Gets the CoAP endpoint that should be used to communicate with a given client.
      *

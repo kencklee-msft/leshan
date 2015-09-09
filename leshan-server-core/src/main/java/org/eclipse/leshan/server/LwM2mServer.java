@@ -60,7 +60,7 @@ public interface LwM2mServer {
      *         http://tools.ietf.org/html/rfc7252#section-4.2 ).
      */
     <T extends LwM2mResponse> T send(Client destination, DownlinkRequest<T> request);
-
+    
     /**
      * Sends a Lightweight M2M request synchronously. Will block until a response is received from the remote client.
      * 

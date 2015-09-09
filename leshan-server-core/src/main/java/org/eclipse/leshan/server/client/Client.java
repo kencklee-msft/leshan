@@ -30,6 +30,7 @@ import org.eclipse.leshan.util.Validate;
  */
 public class Client {
 
+	private static final long ADDIIIONAL_LIVETIME_IN_MILLIS = 5000L;
     private static final long DEFAULT_LIFETIME_IN_SEC = 86400L;
 
     private static final String DEFAULT_LWM2M_VERSION = "1.0";
@@ -272,7 +273,7 @@ public class Client {
     }
 
     public boolean isAlive() {
-        return lastUpdate.getTime() + lifeTimeInSec * 1000 > System.currentTimeMillis();
+        return lastUpdate.getTime() + lifeTimeInSec * 1000 + ADDIIIONAL_LIVETIME_IN_MILLIS > System.currentTimeMillis();
     }
 
     @Override
