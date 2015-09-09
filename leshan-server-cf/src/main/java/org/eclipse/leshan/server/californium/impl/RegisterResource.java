@@ -145,7 +145,6 @@ public class RegisterResource extends CoapResource {
         // -------------------------------
         if (response.getCode() == org.eclipse.leshan.ResponseCode.CREATED) {
             exchange.setLocationPath(RESOURCE_NAME + "/" + response.getRegistrationID());
-System.err.println("exchange:" + exchange.toString());            
             exchange.respond(ResponseCode.CREATED);
         } else {
             // TODO we lost specific message error with this refactoring
