@@ -21,6 +21,7 @@ package org.eclipse.leshan.client.example;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -71,8 +72,10 @@ public class LeshanClientExample {
         // Initialize object list
         ObjectsInitializer initializer = new ObjectsInitializer();
         initializer.setClassForObject(3, Device.class);
+        initializer.setClassForObject(5, FirmwareUpdate.class);
         List<ObjectEnabler> enablers = initializer.createMandatory();
-
+        enablers.addAll(initializer.create(5));
+        
         // Create client
         final InetSocketAddress clientAddress = new InetSocketAddress(localHostName, localPort);
         final InetSocketAddress serverAddress = new InetSocketAddress(serverHostName, serverPort);
@@ -111,6 +114,92 @@ public class LeshanClientExample {
                 }
             }
         });
+    }
+    
+    // Ken: new added
+    public static class FirmwareUpdate extends BaseInstanceEnabler {
+    	String pkg = "[firmware]";	// package
+    	String packageURI = "";
+    	String update = "";
+    	Integer state = 1;    	
+    	Integer updateResult = 0;
+    	
+        public FirmwareUpdate() {
+        }
+        
+        @Override
+        public ValueResponse read(int resourceId) {
+        	switch (resourceId) {
+        	case 0:	// package
+    			return new ValueResponse(ResponseCode.CONTENT, new LwM2mResource(resourceId, Value.newStringValue(getPackage())));
+        	case 1:	// package  URI
+    			return new ValueResponse(ResponseCode.CONTENT, new LwM2mResource(resourceId, Value.newStringValue(getPackageURI())));
+        	case 2:	// update
+    			return new ValueResponse(ResponseCode.CONTENT, new LwM2mResource(resourceId, Value.newStringValue(getUpdate())));
+        	case 3:	// state
+    			return new ValueResponse(ResponseCode.CONTENT, new LwM2mResource(resourceId, Value.newIntegerValue(getState())));
+        	case 5:	// update result
+    			return new ValueResponse(ResponseCode.CONTENT, new LwM2mResource(resourceId, Value.newIntegerValue(getUpdateResult())));
+        	}
+            return super.read(resourceId);
+        }
+
+        @Override
+        public LwM2mResponse execute(int resourceId, byte[] params) {
+            if (2 == resourceId) {
+            	String s = Arrays.toString(params);
+            	setUpdate(s);
+                System.out.println("Execute on resource " + resourceId + " params " + params);        	
+                return new LwM2mResponse(ResponseCode.CHANGED);
+            }
+            return super.execute(resourceId, params);
+        }
+
+        @Override
+        public LwM2mResponse write(int resourceId, LwM2mResource value) {
+        	switch (resourceId) {
+        	case 0:	// package
+        		setPackage((String) value.getValue().value.toString());
+        		return new LwM2mResponse(ResponseCode.CHANGED);
+        	case 1:	// package uri
+        		setPackageURI((String) value.getValue().value);
+                return new LwM2mResponse(ResponseCode.CHANGED);
+        	}
+            return super.write(resourceId, value);
+        }
+        
+        private String getPackage() {
+        	return pkg;
+        }
+        
+        private void setPackage(String s) {
+        	System.err.println("set package: " + s);
+        	this.pkg = s;
+        }
+        
+        private String getPackageURI() {
+        	return packageURI;
+        }
+        
+        private void setPackageURI(String s) {
+        	this.packageURI = s;
+        }
+        
+        private String getUpdate() {
+        	return update;
+        }
+        
+        private void setUpdate(String s) {
+        	this.update = s;
+        }
+        
+        private Integer getState() {
+        	return state;
+        }
+        
+        private Integer getUpdateResult() {
+        	return updateResult;
+        }
     }
 
     public static class Device extends BaseInstanceEnabler {

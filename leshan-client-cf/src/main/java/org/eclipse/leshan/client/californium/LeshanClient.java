@@ -42,6 +42,26 @@ public class LeshanClient implements LwM2mClient {
     private final AtomicBoolean clientServerStarted = new AtomicBoolean(false);
     private final CaliforniumLwM2mClientRequestSender requestSender;
     private final List<LwM2mObjectEnabler> objectEnablers;
+    
+    public LeshanClient(final CoapServer serverLocal, final Endpoint endpoint, final List<LwM2mObjectEnabler> objectEnablers) {
+    	clientSideServer = serverLocal;
+
+        this.objectEnablers = new ArrayList<>(objectEnablers);
+        for (LwM2mObjectEnabler enabler : objectEnablers) {
+            if (clientSideServer.getRoot().getChild(Integer.toString(enabler.getId())) != null) {
+                throw new IllegalArgumentException("Trying to load Client Object of name '" + enabler.getId()
+                        + "' when one was already added.");
+            }
+
+            final ObjectResource clientObject = new ObjectResource(enabler);
+            clientSideServer.add(clientObject);
+        }
+
+        requestSender = new CaliforniumLwM2mClientRequestSender(
+        		endpoint, 
+        		new InetSocketAddress("127.0.0.2", 9999), 
+        		this);
+    }
 
     public LeshanClient(final InetSocketAddress serverAddress, final List<LwM2mObjectEnabler> objectEnablers) {
         this(new InetSocketAddress("0", 0), serverAddress, new CoapServer(), objectEnablers);

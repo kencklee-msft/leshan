@@ -30,7 +30,7 @@ import org.eclipse.leshan.util.Validate;
  */
 public class Client {
 
-	private static final long ADDIIIONAL_LIVETIME_IN_MILLIS = 5000L;
+	private static final long ADDIIIONAL_LIVETIME_IN_MILLIS = 1800000L; // 1800 sec/30min
     private static final long DEFAULT_LIFETIME_IN_SEC = 86400L;
 
     private static final String DEFAULT_LWM2M_VERSION = "1.0";
@@ -66,7 +66,7 @@ public class Client {
     /** The location where LWM2M objects are hosted on the device */
     private final String rootPath;
 
-    private final Date lastUpdate;
+    private Date lastUpdate;
 
     public Client(String registrationId, String endpoint, InetAddress address, int port,
             InetSocketAddress registrationEndpointAddress) {
@@ -270,6 +270,10 @@ public class Client {
 
     public Date getLastUpdate() {
         return lastUpdate;
+    }
+    
+    public void setLastUpdate() {
+    	lastUpdate = new Date();
     }
 
     public boolean isAlive() {

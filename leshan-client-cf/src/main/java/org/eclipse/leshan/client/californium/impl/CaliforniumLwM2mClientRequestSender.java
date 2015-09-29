@@ -42,7 +42,7 @@ public class CaliforniumLwM2mClientRequestSender implements LwM2mClientRequestSe
     private static final Logger LOG = LoggerFactory.getLogger(CaliforniumLwM2mClientRequestSender.class);
 
     // TODO add a way to set timeout.
-    private static final int COAP_REQUEST_TIMEOUT_MILLIS = 5000;
+    private static final int COAP_REQUEST_TIMEOUT_MILLIS = 10000;
 
     private final Endpoint clientEndpoint;
     private final InetSocketAddress serverAddress;
