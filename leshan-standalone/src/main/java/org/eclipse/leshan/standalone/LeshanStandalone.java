@@ -132,6 +132,8 @@ public class LeshanStandalone {
 			LOG.error("No address as been specified, please enter arguement HOSTNAME, PORT for TCP");
 		}
 
+		/* ken comments out to test compilation */
+		/*
 		final TLSServerConnectionConfig config = new TLSServerConnectionConfig("localhost", 5684);
 		final String keystore = "/Users/simonlemoy/Workspace_github/tls_tmp/zatar-server-1.ks";
 		try {
@@ -139,6 +141,7 @@ public class LeshanStandalone {
 		} catch (SSLException | NoSuchAlgorithmException e1) {
 			LOG.error("could not setup a secure connection: ", e1);
 		}
+		*/
 		startServer(builder);
 
 	}
