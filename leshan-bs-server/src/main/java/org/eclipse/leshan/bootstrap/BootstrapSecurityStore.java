@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.io.Charsets;
+import org.eclipse.leshan.core.model.SecurityMode;
 import org.eclipse.leshan.server.bootstrap.BootstrapConfig;
-import org.eclipse.leshan.server.bootstrap.SecurityMode;
 import org.eclipse.leshan.server.bootstrap.BootstrapConfig.ServerSecurity;
 import org.eclipse.leshan.server.security.SecurityInfo;
 import org.eclipse.leshan.server.security.SecurityStore;

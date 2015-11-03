@@ -18,7 +18,6 @@ package org.eclipse.leshan.integration.tests;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -32,22 +31,12 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.eclipse.californium.core.CoapServer;
-import org.eclipse.californium.core.network.CoAPEndpoint;
-import org.eclipse.californium.core.network.config.NetworkConfig;
-import org.eclipse.californium.scandium.DTLSConnector;
-import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
-import org.eclipse.californium.scandium.dtls.pskstore.StaticPskStore;
-import org.eclipse.leshan.client.californium.LeshanClient;
-import org.eclipse.leshan.client.resource.LwM2mObjectEnabler;
-import org.eclipse.leshan.client.resource.ObjectEnabler;
-import org.eclipse.leshan.client.resource.ObjectsInitializer;
+import org.eclipse.leshan.client.californium.LeshanClientBuilder;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder.LeshanUDPServerBuilder;
 import org.eclipse.leshan.server.impl.SecurityRegistryImpl;
 
 public class SecureIntegrationTestHelper extends IntegrationTestHelper {
@@ -63,22 +52,22 @@ public class SecureIntegrationTestHelper extends IntegrationTestHelper {
         // create client credentials
         try {
             // Get point values
-            byte[] publicX = DatatypeConverter
+            final byte[] publicX = DatatypeConverter
                     .parseHexBinary("89c048261979208666f2bfb188be1968fc9021c416ce12828c06f4e314c167b5");
-            byte[] publicY = DatatypeConverter
+            final byte[] publicY = DatatypeConverter
                     .parseHexBinary("cbf1eb7587f08e01688d9ada4be859137ca49f79394bad9179326b3090967b68");
-            byte[] privateS = DatatypeConverter
+            final byte[] privateS = DatatypeConverter
                     .parseHexBinary("e67b68d2aaeb6550f19d98cade3ad62b39532e02e6b422e1f7ea189dabaea5d2");
 
             // Get Elliptic Curve Parameter spec for secp256r1
-            AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
+            final AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
             algoParameters.init(new ECGenParameterSpec("secp256r1"));
-            ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
+            final ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
 
             // Create key specs
-            KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(publicY)),
-                    parameterSpec);
-            KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
+            final KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(
+                    publicY)), parameterSpec);
+            final KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
 
             // Get keys
             clientPublicKey = KeyFactory.getInstance("EC").generatePublic(publicKeySpec);
@@ -90,22 +79,22 @@ public class SecureIntegrationTestHelper extends IntegrationTestHelper {
         // create server credentials
         try {
             // Get point values
-            byte[] publicX = DatatypeConverter
+            final byte[] publicX = DatatypeConverter
                     .parseHexBinary("fcc28728c123b155be410fc1c0651da374fc6ebe7f96606e90d927d188894a73");
-            byte[] publicY = DatatypeConverter
+            final byte[] publicY = DatatypeConverter
                     .parseHexBinary("d2ffaa73957d76984633fc1cc54d0b763ca0559a9dff9706e9f4557dacc3f52a");
-            byte[] privateS = DatatypeConverter
+            final byte[] privateS = DatatypeConverter
                     .parseHexBinary("1dae121ba406802ef07c193c1ee4df91115aabd79c1ed7f4c0ef7ef6a5449400");
 
             // Get Elliptic Curve Parameter spec for secp256r1
-            AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
+            final AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
             algoParameters.init(new ECGenParameterSpec("secp256r1"));
-            ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
+            final ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
 
             // Create key specs
-            KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(publicY)),
-                    parameterSpec);
-            KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
+            final KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(
+                    publicY)), parameterSpec);
+            final KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
 
             // Get keys
             serverPublicKey = KeyFactory.getInstance("EC").generatePublic(publicKeySpec);
@@ -115,60 +104,27 @@ public class SecureIntegrationTestHelper extends IntegrationTestHelper {
         }
     }
 
-    // TODO we need better API for secure client, maybe we need a builder like leshanServer.
     public void createPSKClient() {
-        ObjectsInitializer initializer = new ObjectsInitializer();
-        List<ObjectEnabler> objects = initializer.create(2, 3);
-
-        InetSocketAddress clientAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        DTLSConnector dtlsConnector = new DTLSConnector(clientAddress);
-        // TODO The preferered CipherSuite should not be necessary, if I only set the PSK (scandium bug ?)
-        dtlsConnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_PSK_WITH_AES_128_CCM_8);
-        dtlsConnector.getConfig().setPskStore(new StaticPskStore(pskIdentity, pskKey));
-        CoapServer coapServer = new CoapServer();
-        coapServer.addEndpoint(new CoAPEndpoint(dtlsConnector, NetworkConfig.getStandard()));
-
-        client = new LeshanClient(clientAddress, getServerSecureAddress(), coapServer,
-                new ArrayList<LwM2mObjectEnabler>(objects));
+        final LeshanClientBuilder builder = new LeshanClientBuilder();
+        client = builder.setServerAddress(getServerSecureAddress()).addBindingModeUDP().setPskSecurity(pskIdentity, pskKey).configure().build(2, 3);
     }
 
-    // TODO we need better API for secure client, maybe we need a builder like leshanServer.
     public void createRPKClient() {
-        ObjectsInitializer initializer = new ObjectsInitializer();
-        List<ObjectEnabler> objects = initializer.create(2, 3);
-
-        InetSocketAddress clientAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        DTLSConnector dtlsConnector = new DTLSConnector(clientAddress);
-        // TODO The preferered CipherSuite should not be necessary, if I only set the PSK (scandium bug ?)
-        dtlsConnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8);
-        dtlsConnector.getConfig().setPrivateKey(clientPrivateKey, clientPublicKey);
-
-        CoapServer coapServer = new CoapServer();
-        coapServer.addEndpoint(new CoAPEndpoint(dtlsConnector, NetworkConfig.getStandard()));
-        client = new LeshanClient(clientAddress, getServerSecureAddress(), coapServer,
-                new ArrayList<LwM2mObjectEnabler>(objects));
+        final LeshanClientBuilder builder = new LeshanClientBuilder();
+        client = builder.setServerAddress(getServerSecureAddress()).addBindingModeUDP().setRpkSecurity(clientPrivateKey, clientPublicKey).configure()
+                .build(2, 3);
     }
 
     public void createPSKandRPKClient() {
-        ObjectsInitializer initializer = new ObjectsInitializer();
-        List<ObjectEnabler> objects = initializer.create(2, 3);
-
-        InetSocketAddress clientAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        DTLSConnector dtlsConnector = new DTLSConnector(clientAddress);
-        dtlsConnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8);
-        dtlsConnector.getConfig().setPskStore(new StaticPskStore(pskIdentity, pskKey));
-        dtlsConnector.getConfig().setPrivateKey(clientPrivateKey, clientPublicKey);
-
-        CoapServer coapServer = new CoapServer();
-        coapServer.addEndpoint(new CoAPEndpoint(dtlsConnector, NetworkConfig.getStandard()));
-        client = new LeshanClient(clientAddress, getServerSecureAddress(), coapServer,
-                new ArrayList<LwM2mObjectEnabler>(objects));
+        final LeshanClientBuilder builder = new LeshanClientBuilder();
+        client = builder.setServerAddress(getServerSecureAddress()).addBindingModeUDP().setPskSecurity(pskIdentity, pskKey)
+                .setRpkSecurity(clientPrivateKey, clientPublicKey).configure().build(2, 3);
     }
 
     public void createServerWithRPK() {
-        LeshanServerBuilder builder = new LeshanServerBuilder();
-        builder.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        builder.setLocalAddressSecure(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        final LeshanUDPServerBuilder builder = LeshanServerBuilder.getLeshanUDPServerBuilder();
+        builder.setLocalAddress(InetAddress.getLoopbackAddress().getHostAddress(), 0);
+        builder.setLocalAddressSecure(InetAddress.getLoopbackAddress().getHostAddress(), 0);
         builder.setSecurityRegistry(new SecurityRegistryImpl(serverPrivateKey, serverPublicKey) {
             // TODO we should separate SecurityRegistryImpl in 2 registries :
             // InMemorySecurityRegistry and PersistentSecurityRegistry

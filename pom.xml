@@ -20,7 +20,7 @@ Contributors:
 
     <groupId>org.eclipse.leshan</groupId>
     <artifactId>leshan</artifactId>
-    <version>0.1.11-M6-SNAPSHOT</version>
+    <version>99.0.7-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>leshan</name>
@@ -46,8 +46,10 @@ Contributors:
         <module>leshan-client-core</module>
         <module>leshan-client-cf</module>
 
-        <module>leshan-integration-tests</module> 
-
+        <module>leshan-integration-tests</module>
+		<!--
+		<module>leshan-tcp-integration-tests</module>  
+		 -->
         <module>leshan-client-example</module>
         <module>leshan-standalone</module>
         <module>leshan-bs-server</module>
@@ -84,12 +86,12 @@ Contributors:
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <californium.version>1.0.0-M3</californium.version>
+        <californium.version>99.0.3-SNAPSHOT</californium.version>
         <log4j.version>[2.0.0, 3)</log4j.version>
         <jetty.version>9.1.4.v20140401</jetty.version>
     </properties>
 
-    <distributionManagement>
+ <!--     <distributionManagement>
         <snapshotRepository>
             <id>repo.eclipse.org</id>
             <name>Californium Repository - Snapshots</name>
@@ -99,7 +101,21 @@ Contributors:
             <id>ossrh</id>
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
-    </distributionManagement>
+    </distributionManagement>-->
+
+    <distributionManagement>
+    	<snapshotRepository>
+      		<id>thirdparty-snapshot</id>
+      		<url>http://localhost:1234/nexus/content/repositories/thirdparty-snapshot</url>
+    	</snapshotRepository>
+  	</distributionManagement>
+
+  	<repositories>
+  		<repository>
+			<id>thirdparty-snapshot</id>
+			<url>http://localhost:1234/nexus/content/repositories/thirdparty-snapshot</url>
+		</repository>
+	</repositories>
 
     <profiles>
         <profile>
@@ -317,7 +333,9 @@ Contributors:
             <dependency>
                 <groupId>org.eclipse.californium</groupId>
                 <artifactId>scandium</artifactId>
-                <version>${californium.version}</version>
+                <!--  <version>${californium.version}</version>-->
+                <version>1.0.0-M3</version>
+
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -348,7 +366,7 @@ Contributors:
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>
-            </dependency>            
+            </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>

@@ -17,6 +17,7 @@ package org.eclipse.leshan.server.impl;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
 
 import org.eclipse.leshan.LinkObject;
 import org.eclipse.leshan.core.request.BindingMode;
@@ -34,7 +35,7 @@ public class ClientRegistryImplTest {
     int port = 23452;
     Long lifetime = 10000L;
     String sms = "0171-32423545";
-    BindingMode binding = BindingMode.UQS;
+    EnumSet<BindingMode> binding = BindingMode.getBindingMode(BindingMode.U, BindingMode.S, BindingMode.Q);
     LinkObject[] objectLinks = LinkObject.parse("</3>".getBytes(org.eclipse.leshan.util.Charsets.UTF_8));
     String registrationId = "4711";
     Client client;
@@ -50,13 +51,13 @@ public class ClientRegistryImplTest {
         givenASimpleClient(lifetime);
         registry.registerClient(client);
 
-        ClientUpdate update = new ClientUpdate(registrationId, address, port, null, null, null, null);
-        Client updatedClient = registry.updateClient(update);
+        final ClientUpdate update = new ClientUpdate(registrationId, address, port, null, null, null, null);
+        final Client updatedClient = registry.updateClient(update);
         Assert.assertEquals(lifetime, updatedClient.getLifeTimeInSec());
         Assert.assertSame(binding, updatedClient.getBindingMode());
         Assert.assertEquals(sms, updatedClient.getSmsNumber());
 
-        Client registeredClient = registry.get(ep);
+        final Client registeredClient = registry.get(ep);
         Assert.assertEquals(lifetime, registeredClient.getLifeTimeInSec());
         Assert.assertSame(binding, registeredClient.getBindingMode());
         Assert.assertEquals(sms, registeredClient.getSmsNumber());
@@ -75,15 +76,15 @@ public class ClientRegistryImplTest {
         registry.registerClient(client);
         Assert.assertFalse(client.isAlive());
 
-        ClientUpdate update = new ClientUpdate(registrationId, address, port, lifetime, null, null, null);
-        Client updatedClient = registry.updateClient(update);
+        final ClientUpdate update = new ClientUpdate(registrationId, address, port, lifetime, null, null, null);
+        final Client updatedClient = registry.updateClient(update);
         Assert.assertTrue(updatedClient.isAlive());
 
-        Client registeredClient = registry.get(ep);
+        final Client registeredClient = registry.get(ep);
         Assert.assertTrue(registeredClient.isAlive());
     }
 
-    private void givenASimpleClient(Long lifetime) {
+    private void givenASimpleClient(final Long lifetime) {
         client = new Client(registrationId, ep, address, port, null, lifetime, sms, binding, objectLinks,
                 InetSocketAddress.createUnresolved("localhost", 5683));
     }

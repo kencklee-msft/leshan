@@ -18,17 +18,13 @@ package org.eclipse.leshan.integration.tests;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.leshan.client.LwM2mClient;
-import org.eclipse.leshan.client.californium.LeshanClient;
-import org.eclipse.leshan.client.resource.LwM2mObjectEnabler;
-import org.eclipse.leshan.client.resource.ObjectEnabler;
-import org.eclipse.leshan.client.resource.ObjectsInitializer;
+import org.eclipse.leshan.client.californium.LeshanClientBuilder;
 import org.eclipse.leshan.server.LwM2mServer;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder.LeshanUDPServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
 import org.eclipse.leshan.server.californium.impl.SecureEndpoint;
 import org.eclipse.leshan.server.client.Client;
@@ -46,15 +42,15 @@ public class IntegrationTestHelper {
     LwM2mClient client;
 
     public void createClient() {
-        ObjectsInitializer initializer = new ObjectsInitializer();
-        List<ObjectEnabler> objects = initializer.create(2, 3);
-        client = new LeshanClient(getServerAddress(), new ArrayList<LwM2mObjectEnabler>(objects));
+        final LeshanClientBuilder builder = new LeshanClientBuilder();
+
+        client = builder.setServerAddress(getServerAddress()).build(2, 3);
     }
 
     public void createServer() {
-        LeshanServerBuilder builder = new LeshanServerBuilder();
-        builder.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        builder.setLocalAddressSecure(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        final LeshanUDPServerBuilder builder = LeshanServerBuilder.getLeshanUDPServerBuilder();
+        builder.setLocalAddress(InetAddress.getLoopbackAddress().getHostAddress(), 0);
+        builder.setLocalAddressSecure(InetAddress.getLoopbackAddress().getHostAddress(), 0);
         builder.setSecurityRegistry(new SecurityRegistryImpl() {
             // TODO we should separate SecurityRegistryImpl in 2 registries :
             // InMemorySecurityRegistry and PersistentSecurityRegistry
@@ -77,7 +73,7 @@ public class IntegrationTestHelper {
     }
 
     protected InetSocketAddress getServerSecureAddress() {
-        for (Endpoint endpoint : ((LeshanServer) server).getCoapServer().getEndpoints()) {
+        for (final Endpoint endpoint : ((LeshanServer) server).getCoapServer().getEndpoints()) {
             if (endpoint instanceof SecureEndpoint)
                 return endpoint.getAddress();
         }
@@ -85,7 +81,7 @@ public class IntegrationTestHelper {
     }
 
     protected InetSocketAddress getServerAddress() {
-        for (Endpoint endpoint : ((LeshanServer) server).getCoapServer().getEndpoints()) {
+        for (final Endpoint endpoint : ((LeshanServer) server).getCoapServer().getEndpoints()) {
             if (!(endpoint instanceof SecureEndpoint))
                 return endpoint.getAddress();
         }

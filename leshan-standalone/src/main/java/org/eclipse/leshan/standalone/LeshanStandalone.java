@@ -29,13 +29,19 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
+import java.util.EnumSet;
 
+import javax.net.ssl.SSLException;
 import javax.xml.bind.DatatypeConverter;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.leshan.core.request.BindingMode;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder.BasicLeshanServerBuilder;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder.LeshanTcpServerBuilder;
+import org.eclipse.leshan.server.californium.LeshanServerBuilder.LeshanUDPServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
 import org.eclipse.leshan.server.impl.SecurityRegistryImpl;
 import org.eclipse.leshan.standalone.servlet.ClientServlet;
@@ -47,108 +53,148 @@ import org.slf4j.LoggerFactory;
 
 public class LeshanStandalone {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LeshanStandalone.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LeshanStandalone.class);
 
-    private Server server;
-    private LeshanServer lwServer;
+	private Server server;
+	private LeshanServer lwServer;
 
-    public void start() {
-        // Use those ENV variables for specifying the interface to be bound for coap and coaps
-        String iface = System.getenv("COAPIFACE");
-        String ifaces = System.getenv("COAPSIFACE");
+	public void start() {
+		// Use those ENV variables for specifying the interface to be bound for coap and coaps
+		final String iface = System.getenv("COAPIFACE");
+		final String ifaces = System.getenv("COAPSIFACE");
+		final String mainBindingMode = System.getenv("BINDING");
 
-        // Build LWM2M server
-        LeshanServerBuilder builder = new LeshanServerBuilder();
-        if (iface != null && !iface.isEmpty()) {
-            String[] add = iface.split(":");
-            builder.setLocalAddress(add[0], Integer.parseInt(add[1]));
-        }
-        if (ifaces != null && !ifaces.isEmpty()) {
-            String[] adds = ifaces.split(":");
-            builder.setLocalAddressSecure(adds[0], Integer.parseInt(adds[1]));
-        }
+		final EnumSet<BindingMode> bindingModes = BindingMode.parseFromString(mainBindingMode);
 
-        // Get public and private server key
-        PrivateKey privateKey = null;
-        PublicKey publicKey = null;
-        try {
-            // Get point values
-            byte[] publicX = DatatypeConverter
-                    .parseHexBinary("fcc28728c123b155be410fc1c0651da374fc6ebe7f96606e90d927d188894a73");
-            byte[] publicY = DatatypeConverter
-                    .parseHexBinary("d2ffaa73957d76984633fc1cc54d0b763ca0559a9dff9706e9f4557dacc3f52a");
-            byte[] privateS = DatatypeConverter
-                    .parseHexBinary("1dae121ba406802ef07c193c1ee4df91115aabd79c1ed7f4c0ef7ef6a5449400");
+		if(bindingModes.contains(BindingMode.T)) {
+			buildTCPStandaloneServer(iface);
+		} else if(bindingModes.contains(BindingMode.U)) {
+			buildUDPStandaloneServer(iface, ifaces);
+		} else {
+			LOG.error("NO Valide binding mode was specified, please pass environement variable BINDING as either U or T, Q and S are not supported for now ");
+		}
+	}
 
-            // Get Elliptic Curve Parameter spec for secp256r1
-            AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
-            algoParameters.init(new ECGenParameterSpec("secp256r1"));
-            ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
+	private void buildUDPStandaloneServer(final String iface, final String ifaces) {
+		// Build LWM2M server
+		final LeshanUDPServerBuilder builder = LeshanServerBuilder.getLeshanUDPServerBuilder();
+		if (iface != null && !iface.isEmpty()) {
+			final String[] add = iface.split(":");
+			builder.setLocalAddress(add[0], Integer.parseInt(add[1]));
+		}
+		if (ifaces != null && !ifaces.isEmpty()) {
+			final String[] adds = ifaces.split(":");
+			builder.setLocalAddressSecure(adds[0], Integer.parseInt(adds[1]));
+		}
 
-            // Create key specs
-            KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(publicY)),
-                    parameterSpec);
-            KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
+		// Get public and private server key
+		PrivateKey privateKey = null;
+		PublicKey publicKey = null;
+		try {
+			// Get point values
+			final byte[] publicX = DatatypeConverter
+					.parseHexBinary("fcc28728c123b155be410fc1c0651da374fc6ebe7f96606e90d927d188894a73");
+			final byte[] publicY = DatatypeConverter
+					.parseHexBinary("d2ffaa73957d76984633fc1cc54d0b763ca0559a9dff9706e9f4557dacc3f52a");
+			final byte[] privateS = DatatypeConverter
+					.parseHexBinary("1dae121ba406802ef07c193c1ee4df91115aabd79c1ed7f4c0ef7ef6a5449400");
 
-            // Get keys
-            publicKey = KeyFactory.getInstance("EC").generatePublic(publicKeySpec);
-            privateKey = KeyFactory.getInstance("EC").generatePrivate(privateKeySpec);
+			// Get Elliptic Curve Parameter spec for secp256r1
+			final AlgorithmParameters algoParameters = AlgorithmParameters.getInstance("EC");
+			algoParameters.init(new ECGenParameterSpec("secp256r1"));
+			final ECParameterSpec parameterSpec = algoParameters.getParameterSpec(ECParameterSpec.class);
 
-            builder.setSecurityRegistry(new SecurityRegistryImpl(privateKey, publicKey));
-        } catch (InvalidKeySpecException | NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            LOG.warn("Unable to load RPK.", e);
-        }
+			// Create key specs
+			final KeySpec publicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(publicX), new BigInteger(publicY)),
+					parameterSpec);
+			final KeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(privateS), parameterSpec);
 
-        lwServer = builder.build();
-        lwServer.start();
+			// Get keys
+			publicKey = KeyFactory.getInstance("EC").generatePublic(publicKeySpec);
+			privateKey = KeyFactory.getInstance("EC").generatePrivate(privateKeySpec);
 
-        // Now prepare and start jetty
-        String webPort = System.getenv("PORT");
-        if (webPort == null || webPort.isEmpty()) {
-            webPort = System.getProperty("PORT");
-        }
-        if (webPort == null || webPort.isEmpty()) {
-            webPort = "8080";
-        }
-        server = new Server(Integer.valueOf(webPort));
-        WebAppContext root = new WebAppContext();
-        root.setContextPath("/");
-        root.setResourceBase(this.getClass().getClassLoader().getResource("webapp").toExternalForm());
-        root.setParentLoaderPriority(true);
-        server.setHandler(root);
+			builder.setSecurityRegistry(new SecurityRegistryImpl(privateKey, publicKey));
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException | InvalidParameterSpecException e) {
+			LOG.warn("Unable to load RPK.", e);
+		}
 
-        // Create Servlet
-        EventServlet eventServlet = new EventServlet(lwServer);
-        ServletHolder eventServletHolder = new ServletHolder(eventServlet);
-        root.addServlet(eventServletHolder, "/event/*");
+		startServer(builder);
+	}
 
-        ServletHolder clientServletHolder = new ServletHolder(new ClientServlet(lwServer));
-        root.addServlet(clientServletHolder, "/api/clients/*");
+	//offer a secure connection as well
+	private void buildTCPStandaloneServer(final String iface) {
+		// Build LWM2M server
+		final LeshanTcpServerBuilder<?> builder = LeshanServerBuilder.getLeshanTCPServerBuilder();
+		if (iface != null && !iface.isEmpty()) {
+			final String[] add = iface.split(":");
+			builder.setAddress(add[0]).setPort(Integer.parseInt(add[1]));
+		} else {
+			LOG.error("No address as been specified, please enter arguement HOSTNAME, PORT for TCP");
+		}
 
-        ServletHolder securityServletHolder = new ServletHolder(new SecurityServlet(lwServer.getSecurityRegistry()));
-        root.addServlet(securityServletHolder, "/api/security/*");
+		final TLSServerConnectionConfig config = new TLSServerConnectionConfig("localhost", 5684);
+		final String keystore = "/Users/simonlemoy/Workspace_github/tls_tmp/zatar-server-1.ks";
+		try {
+			config.secure("TLS", "password", new String[]{keystore}, "TLSv1.1", "TLSv1.2");
+		} catch (SSLException | NoSuchAlgorithmException e1) {
+			LOG.error("could not setup a secure connection: ", e1);
+		}
+		startServer(builder);
 
-        ServletHolder objectSpecServletHolder = new ServletHolder(new ObjectSpecServlet());
-        root.addServlet(objectSpecServletHolder, "/api/objectspecs/*");
+	}
 
-        // Start jetty
-        try {
-            server.start();
-        } catch (Exception e) {
-            LOG.error("jetty error", e);
-        }
-    }
+	private void startServer(final BasicLeshanServerBuilder<?> builder) {
+		lwServer = builder.build();
+		lwServer.start();
 
-    public void stop() {
-        try {
-            lwServer.destroy();
-            server.stop();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+		// Now prepare and start jetty
+		String webPort = System.getenv("PORT");
+		if (webPort == null || webPort.isEmpty()) {
+			webPort = System.getProperty("PORT");
+		}
+		if (webPort == null || webPort.isEmpty()) {
+			webPort = "8080";
+		}
+		server = new Server(Integer.valueOf(webPort));
+		final WebAppContext root = new WebAppContext();
+		root.setContextPath("/");
+		root.setResourceBase(this.getClass().getClassLoader().getResource("webapp").toExternalForm());
+		root.setParentLoaderPriority(true);
+		server.setHandler(root);
 
-    public static void main(String[] args) {
-        new LeshanStandalone().start();
-    }
+		// Create Servlet
+		final EventServlet eventServlet = new EventServlet(lwServer);
+		final ServletHolder eventServletHolder = new ServletHolder(eventServlet);
+		root.addServlet(eventServletHolder, "/event/*");
+
+		final ServletHolder clientServletHolder = new ServletHolder(new ClientServlet(lwServer));
+		root.addServlet(clientServletHolder, "/api/clients/*");
+
+		final ServletHolder securityServletHolder = new ServletHolder(new SecurityServlet(lwServer.getSecurityRegistry()));
+		root.addServlet(securityServletHolder, "/api/security/*");
+
+		final ServletHolder objectSpecServletHolder = new ServletHolder(new ObjectSpecServlet());
+		root.addServlet(objectSpecServletHolder, "/api/objectspecs/*");
+
+		// Start jetty
+		try {
+			server.start();
+		} catch (final Exception e) {
+			LOG.error("jetty error", e);
+		}
+	}
+
+
+	public void stop() {
+		try {
+			lwServer.destroy();
+			server.stop();
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static void main(final String[] args) {
+		new LeshanStandalone().start();
+	}
 }

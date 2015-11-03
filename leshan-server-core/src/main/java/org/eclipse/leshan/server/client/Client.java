@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 
 import org.eclipse.leshan.LinkObject;
 import org.eclipse.leshan.core.request.BindingMode;
@@ -30,7 +31,9 @@ import org.eclipse.leshan.util.Validate;
  */
 public class Client {
 
-    private static final long DEFAULT_LIFETIME_IN_SEC = 86400L;
+    private static final EnumSet<BindingMode> DEFAULT_BINDING_MODE = BindingMode.getBindingMode(BindingMode.U);
+
+	private static final long DEFAULT_LIFETIME_IN_SEC = 86400L;
 
     private static final String DEFAULT_LWM2M_VERSION = "1.0";
 
@@ -51,7 +54,7 @@ public class Client {
 
     private final String lwM2mVersion;
 
-    private final BindingMode bindingMode;
+    private final EnumSet<BindingMode> bindingModes;
 
     /**
      * The LWM2M Client's unique end point name.
@@ -67,21 +70,21 @@ public class Client {
 
     private final Date lastUpdate;
 
-    public Client(String registrationId, String endpoint, InetAddress address, int port,
-            InetSocketAddress registrationEndpointAddress) {
+    public Client(final String registrationId, final String endpoint, final InetAddress address, final int port,
+            final InetSocketAddress registrationEndpointAddress) {
         this(registrationId, endpoint, address, port, null, null, null, null, null, registrationEndpointAddress);
     }
 
-    public Client(String registrationId, String endpoint, InetAddress address, int port, String lwM2mVersion,
-            Long lifetimeInSec, String smsNumber, BindingMode bindingMode, LinkObject[] objectLinks,
-            InetSocketAddress registrationEndpointAddress) {
+    public Client(final String registrationId, final String endpoint, final InetAddress address, final int port, final String lwM2mVersion,
+            final Long lifetimeInSec, final String smsNumber, final EnumSet<BindingMode> bindingMode, final LinkObject[] objectLinks,
+            final InetSocketAddress registrationEndpointAddress) {
         this(registrationId, endpoint, address, port, lwM2mVersion, lifetimeInSec, smsNumber, bindingMode, objectLinks,
                 registrationEndpointAddress, null, null);
     }
 
-    public Client(String registrationId, String endpoint, InetAddress address, int port, String lwM2mVersion,
-            Long lifetimeInSec, String smsNumber, BindingMode bindingMode, LinkObject[] objectLinks,
-            InetSocketAddress registrationEndpointAddress, Date registrationDate, Date lastUpdate) {
+    public Client(final String registrationId, final String endpoint, final InetAddress address, final int port, final String lwM2mVersion,
+            final Long lifetimeInSec, final String smsNumber, final EnumSet<BindingMode> bindingMode, final LinkObject[] objectLinks,
+            final InetSocketAddress registrationEndpointAddress, final Date registrationDate, final Date lastUpdate) {
 
         Validate.notEmpty(endpoint);
         Validate.notNull(address);
@@ -98,7 +101,7 @@ public class Client {
         // extract the root objects path from the object links
         String rootPath = "/";
         if (objectLinks != null) {
-            for (LinkObject link : objectLinks) {
+            for (final LinkObject link : objectLinks) {
                 if (link != null && "oma.lwm2m".equals(link.getAttributes().get("rt"))) {
                     rootPath = link.getUrl();
                     break;
@@ -110,7 +113,7 @@ public class Client {
         this.registrationDate = registrationDate == null ? new Date() : registrationDate;
         this.lifeTimeInSec = lifetimeInSec == null ? DEFAULT_LIFETIME_IN_SEC : lifetimeInSec;
         this.lwM2mVersion = lwM2mVersion == null ? DEFAULT_LWM2M_VERSION : lwM2mVersion;
-        this.bindingMode = bindingMode == null ? BindingMode.U : bindingMode;
+        this.bindingModes = bindingMode == null ? DEFAULT_BINDING_MODE : bindingMode;
         this.smsNumber = smsNumber;
         this.registrationEndpointAddress = registrationEndpointAddress;
         this.lastUpdate = lastUpdate == null ? new Date() : lastUpdate;
@@ -169,13 +172,13 @@ public class Client {
             return null;
         }
 
-        LinkObject[] res = Arrays.copyOf(objectLinks, objectLinks.length);
+        final LinkObject[] res = Arrays.copyOf(objectLinks, objectLinks.length);
 
         Arrays.sort(res, new Comparator<LinkObject>() {
 
             /* sort by objectid, object instance and ressource */
             @Override
-            public int compare(LinkObject o1, LinkObject o2) {
+            public int compare(final LinkObject o1, final LinkObject o2) {
                 if (o1 == null && o2 == null)
                     return 0;
                 if (o1 == null)
@@ -183,8 +186,8 @@ public class Client {
                 if (o2 == null)
                     return 1;
                 // by object
-                Integer oi1 = o1.getObjectId();
-                Integer oi2 = o2.getObjectId();
+                final Integer oi1 = o1.getObjectId();
+                final Integer oi2 = o2.getObjectId();
 
                 if (oi1 == null && oi2 == null) {
                     return 0;
@@ -195,13 +198,13 @@ public class Client {
                 if (oi2 == null) {
                     return 1;
                 }
-                int oicomp = oi1.compareTo(oi2);
+                final int oicomp = oi1.compareTo(oi2);
                 if (oicomp != 0) {
                     return oicomp;
                 }
 
-                Integer oii1 = o1.getObjectInstanceId();
-                Integer oii2 = o2.getObjectInstanceId();
+                final Integer oii1 = o1.getObjectInstanceId();
+                final Integer oii2 = o2.getObjectInstanceId();
                 if (oii1 == null && oii2 == null) {
                     return 0;
                 }
@@ -211,13 +214,13 @@ public class Client {
                 if (oii2 == null) {
                     return 1;
                 }
-                int oiicomp = oii1.compareTo(oii2);
+                final int oiicomp = oii1.compareTo(oii2);
                 if (oiicomp != 0) {
                     return oiicomp;
                 }
 
-                Integer or1 = o1.getResourceId();
-                Integer or2 = o2.getResourceId();
+                final Integer or1 = o1.getResourceId();
+                final Integer or2 = o2.getResourceId();
                 if (or1 == null && or2 == null) {
                     return 0;
                 }
@@ -247,8 +250,8 @@ public class Client {
         return lwM2mVersion;
     }
 
-    public BindingMode getBindingMode() {
-        return bindingMode;
+    public EnumSet<BindingMode> getBindingMode() {
+        return bindingModes;
     }
 
     /**
@@ -280,7 +283,7 @@ public class Client {
         return String
                 .format("Client [registrationDate=%s, address=%s, port=%s, registrationEndpoint=%s, lifeTimeInSec=%s, smsNumber=%s, lwM2mVersion=%s, bindingMode=%s, endpoint=%s, registrationId=%s, objectLinks=%s, lastUpdate=%s]",
                         registrationDate, address, port, registrationEndpointAddress, lifeTimeInSec, smsNumber,
-                        lwM2mVersion, bindingMode, endpoint, registrationId, Arrays.toString(objectLinks), lastUpdate);
+                        lwM2mVersion, BindingMode.setToString(bindingModes), endpoint, registrationId, Arrays.toString(objectLinks), lastUpdate);
     }
 
     /**
@@ -300,9 +303,9 @@ public class Client {
      *         same value as this Client
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj instanceof Client) {
-            Client other = (Client) obj;
+            final Client other = (Client) obj;
             return this.getEndpoint().equals(other.getEndpoint());
         } else {
             return false;

@@ -18,6 +18,7 @@ package org.eclipse.leshan.core.request;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
+import java.util.EnumSet;
 
 import org.eclipse.leshan.LinkObject;
 import org.eclipse.leshan.core.response.RegisterResponse;
@@ -27,7 +28,7 @@ public class RegisterRequest implements UplinkRequest<RegisterResponse> {
     private String endpointName = null;
     private Long lifetime = null;
     private String lwVersion = null;
-    private BindingMode bindingMode = null;
+    private EnumSet<BindingMode> bindingModes = null;
     private String smsNumber = null;
     private LinkObject[] objectLinks = null;
     private InetSocketAddress registrationEndpoint = null;
@@ -36,27 +37,27 @@ public class RegisterRequest implements UplinkRequest<RegisterResponse> {
     private String pskIdentity = null;
     private PublicKey publicKey = null;
 
-    public RegisterRequest(String endpointName) {
+    public RegisterRequest(final String endpointName) {
         this.endpointName = endpointName;
     }
 
-    public RegisterRequest(String endpointName, Long lifetime, String lwVersion, BindingMode bindingMode,
-            String smsNumber, LinkObject[] objectLinks) {
+    public RegisterRequest(final String endpointName, final Long lifetime, final String lwVersion, final EnumSet<BindingMode> bindingModes,
+            final String smsNumber, final LinkObject[] objectLinks) {
         this.endpointName = endpointName;
         this.lifetime = lifetime;
         this.lwVersion = lwVersion;
-        this.bindingMode = bindingMode;
+        this.bindingModes = bindingModes;
         this.smsNumber = smsNumber;
         this.objectLinks = objectLinks;
     }
 
-    public RegisterRequest(String endpointName, Long lifetime, String lwVersion, BindingMode bindingMode,
-            String smsNumber, LinkObject[] objectLinks, InetAddress sourceAddress, int sourcePort,
-            InetSocketAddress registrationEndpoint, String pskIdentity, PublicKey publicKey) {
+    public RegisterRequest(final String endpointName, final Long lifetime, final String lwVersion, final EnumSet<BindingMode> bindingModes,
+            final String smsNumber, final LinkObject[] objectLinks, final InetAddress sourceAddress, final int sourcePort,
+            final InetSocketAddress registrationEndpoint, final String pskIdentity, final PublicKey publicKey) {
         this.endpointName = endpointName;
         this.lifetime = lifetime;
         this.lwVersion = lwVersion;
-        this.bindingMode = bindingMode;
+        this.bindingModes = bindingModes;
         this.smsNumber = smsNumber;
         this.objectLinks = objectLinks;
 
@@ -87,8 +88,8 @@ public class RegisterRequest implements UplinkRequest<RegisterResponse> {
         return lwVersion;
     }
 
-    public BindingMode getBindingMode() {
-        return bindingMode;
+    public EnumSet<BindingMode> getBindingMode() {
+        return bindingModes;
     }
 
     public String getSmsNumber() {
@@ -116,7 +117,7 @@ public class RegisterRequest implements UplinkRequest<RegisterResponse> {
     }
 
     @Override
-    public void accept(UplinkRequestVisitor visitor) {
+    public void accept(final UplinkRequestVisitor visitor) {
         visitor.visit(this);
     }
 }

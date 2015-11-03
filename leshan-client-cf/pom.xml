@@ -1,4 +1,4 @@
-<!-- 
+<!--
 
 Copyright (c) 2013-2014 Sierra Wireless and others.
 
@@ -22,7 +22,7 @@ Contributors:
     <parent>
         <groupId>org.eclipse.leshan</groupId>
         <artifactId>leshan</artifactId>
-        <version>0.1.11-M6-SNAPSHOT</version>
+        <version>99.0.7-SNAPSHOT</version>
     </parent>
     <artifactId>leshan-client-cf</artifactId>
     <packaging>bundle</packaging>
@@ -35,6 +35,10 @@ Contributors:
             <artifactId>leshan-client-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.leshan</groupId>
+            <artifactId>leshan-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.californium</groupId>
             <artifactId>californium-core</artifactId>
         </dependency>
@@ -42,6 +46,7 @@ Contributors:
             <groupId>org.eclipse.californium</groupId>
             <artifactId>scandium</artifactId>
         </dependency>
+
 
         <!-- test dependencies -->
         <dependency>
@@ -75,22 +80,27 @@ Contributors:
                             org.eclipse.leshan.client.californium.impl,
                         </Export-Package>
                         <Import-Package>
-                            javax.xml.bind, 
-                            javax.xml.parsers, 
-                            org.w3c.dom, 
-                            org.xml.sax,
+                            io.netty.channel,
                             javax.crypto,
                             javax.crypto.spec,
+                            javax.net.ssl,
                             javax.security.auth.x500,
+                            javax.xml.bind,
+                            javax.xml.parsers,
                             org.slf4j;version="1.6",
                             org.eclipse.californium.core,
                             org.eclipse.californium.core.coap,
                             org.eclipse.californium.core.network,
+                            org.eclipse.californium.core.network.config,
                             org.eclipse.californium.core.network.interceptors,
                             org.eclipse.californium.core.server,
                             org.eclipse.californium.core.server.resources,
                             org.eclipse.californium.core.observe,
                             org.eclipse.californium.elements,
+                            org.eclipse.californium.elements.tcp.client,
+                            org.eclipse.californium.scandium,
+                            org.eclipse.californium.scandium.dtls.cipher,
+                            org.eclipse.californium.scandium.dtls.pskstore,
                             org.eclipse.leshan,
                             org.eclipse.leshan.core.model,
                             org.eclipse.leshan.core.node,
@@ -104,6 +114,8 @@ Contributors:
                             org.eclipse.leshan.client.request,
                             org.eclipse.leshan.client.resource,
                             org.eclipse.leshan.client.util,
+                            org.w3c.dom,
+                            org.xml.sax
                         </Import-Package>
                     </instructions>
                 </configuration>

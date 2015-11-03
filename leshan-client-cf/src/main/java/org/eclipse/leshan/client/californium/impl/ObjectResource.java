@@ -17,6 +17,7 @@ package org.eclipse.leshan.client.californium.impl;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.californium.core.CoapResource;
@@ -69,9 +70,9 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
 
     private static final Logger LOG = LoggerFactory.getLogger(ObjectResource.class);
 
-    private LwM2mObjectEnabler nodeEnabler;
+    private final LwM2mObjectEnabler nodeEnabler;
 
-    public ObjectResource(LwM2mObjectEnabler nodeEnabler) {
+    public ObjectResource(final LwM2mObjectEnabler nodeEnabler) {
         super(Integer.toString(nodeEnabler.getId()));
         this.nodeEnabler = nodeEnabler;
         this.nodeEnabler.setNotifySender(this);
@@ -79,7 +80,7 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
     }
 
     @Override
-    public void handleRequest(Exchange exchange) {
+    public void handleRequest(final Exchange exchange) {
         try {
             super.handleRequest(exchange);
         } catch (Exception e) {
@@ -89,23 +90,23 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
     }
 
     @Override
-    public void handleGET(CoapExchange exchange) {
-        String URI = exchange.getRequestOptions().getUriPathString();
+    public void handleGET(final CoapExchange exchange) {
+        final String URI = exchange.getRequestOptions().getUriPathString();
 
         // Manage Discover Request
         if (exchange.getRequestOptions().getAccept() == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
-            DiscoverResponse response = nodeEnabler.discover(new DiscoverRequest(URI));
+            final DiscoverResponse response = nodeEnabler.discover(new DiscoverRequest(URI));
             exchange.respond(fromLwM2mCode(response.getCode()), LinkObject.serialyse(response.getObjectLinks()),
                     MediaTypeRegistry.APPLICATION_LINK_FORMAT);
         }
         // Manage Observe Request
         else if (exchange.getRequestOptions().hasObserve()) {
-            ValueResponse response = nodeEnabler.observe(new ObserveRequest(URI));
+            final ValueResponse response = nodeEnabler.observe(new ObserveRequest(URI));
             if (response.getCode() == org.eclipse.leshan.ResponseCode.CONTENT) {
-                LwM2mPath path = new LwM2mPath(URI);
-                LwM2mNode content = response.getContent();
-                LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
-                ContentFormat contentFormat = ContentFormatHelper.compute(path, content, model);
+                final LwM2mPath path = new LwM2mPath(URI);
+                final LwM2mNode content = response.getContent();
+                final LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
+                final ContentFormat contentFormat = ContentFormatHelper.compute(path, content, model);
                 exchange.respond(ResponseCode.CONTENT, LwM2mNodeEncoder.encode(content, contentFormat, path, model));
                 return;
             } else {
@@ -115,12 +116,12 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
         }
         // Manage Read Request
         else {
-            ValueResponse response = nodeEnabler.read(new ReadRequest(URI));
+            final ValueResponse response = nodeEnabler.read(new ReadRequest(URI));
             if (response.getCode() == org.eclipse.leshan.ResponseCode.CONTENT) {
-                LwM2mPath path = new LwM2mPath(URI);
-                LwM2mNode content = response.getContent();
-                LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
-                ContentFormat contentFormat = ContentFormatHelper.compute(path, content, model);
+                final LwM2mPath path = new LwM2mPath(URI);
+                final LwM2mNode content = response.getContent();
+                final LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
+                final ContentFormat contentFormat = ContentFormatHelper.compute(path, content, model);
                 exchange.respond(ResponseCode.CONTENT, LwM2mNodeEncoder.encode(content, contentFormat, path, model));
                 return;
             } else {
@@ -132,7 +133,7 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
 
     @Override
     public void handlePUT(final CoapExchange coapExchange) {
-        String URI = coapExchange.getRequestOptions().getUriPathString();
+        final String URI = coapExchange.getRequestOptions().getUriPathString();
 
         // get Observe Spec
         ObserveSpec spec = null;
@@ -143,22 +144,23 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
 
         // Manage Write Attributes Request
         if (spec != null) {
-            LwM2mResponse response = nodeEnabler.writeAttributes(new WriteAttributesRequest(URI, spec));
+            final LwM2mResponse response = nodeEnabler.writeAttributes(new WriteAttributesRequest(URI, spec));
             coapExchange.respond(fromLwM2mCode(response.getCode()));
             return;
         }
         // Manage Write Request (replace)
         else {
-            LwM2mPath path = new LwM2mPath(URI);
-            ContentFormat contentFormat = ContentFormat.fromCode(coapExchange.getRequestOptions().getContentFormat());
+            final LwM2mPath path = new LwM2mPath(URI);
+            final ContentFormat contentFormat = ContentFormat.fromCode(coapExchange.getRequestOptions()
+                    .getContentFormat());
             LwM2mNode lwM2mNode;
             try {
-                LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
+                final LwM2mModel model = new LwM2mModel(nodeEnabler.getObjectModel());
                 lwM2mNode = LwM2mNodeDecoder.decode(coapExchange.getRequestPayload(), contentFormat, path, model);
-                LwM2mResponse response = nodeEnabler.write(new WriteRequest(URI, lwM2mNode, contentFormat, true));
+                final LwM2mResponse response = nodeEnabler.write(new WriteRequest(URI, lwM2mNode, contentFormat, true));
                 coapExchange.respond(fromLwM2mCode(response.getCode()));
                 return;
-            } catch (InvalidValueException e) {
+            } catch (final InvalidValueException e) {
                 coapExchange.respond(ResponseCode.INTERNAL_SERVER_ERROR);
                 return;
             }
@@ -168,8 +170,8 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
 
     @Override
     public void handlePOST(final CoapExchange exchange) {
-        String URI = exchange.getRequestOptions().getUriPathString();
-        LwM2mPath path = new LwM2mPath(URI);
+        final String URI = exchange.getRequestOptions().getUriPathString();
+        final LwM2mPath path = new LwM2mPath(URI);
 
         // Manage Execute Request
         if (path.isResource()) {
@@ -217,7 +219,7 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
                 exchange.respond(fromLwM2mCode(response.getCode()));
                 return;
             }
-        } catch (InvalidValueException e) {
+        } catch (final InvalidValueException e) {
             exchange.respond(ResponseCode.BAD_REQUEST);
             return;
         }
@@ -226,13 +228,13 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
     @Override
     public void handleDELETE(final CoapExchange coapExchange) {
         // Manage Delete Request
-        String URI = coapExchange.getRequestOptions().getUriPathString();
-        LwM2mResponse response = nodeEnabler.delete(new DeleteRequest(URI));
+        final String URI = coapExchange.getRequestOptions().getUriPathString();
+        final LwM2mResponse response = nodeEnabler.delete(new DeleteRequest(URI));
         coapExchange.respond(fromLwM2mCode(response.getCode()));
     }
 
     @Override
-    public void sendNotify(String URI) {
+    public void sendNotify(final String URI) {
         notifyObserverRelationsForResource(URI);
     }
 
@@ -241,7 +243,7 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
      * resource.
      */
     @Override
-    public Resource getChild(String name) {
+    public Resource getChild(final String name) {
         return this;
     }
 
@@ -287,25 +289,52 @@ public class ObjectResource extends CoapResource implements LinkFormattable, Not
      * TODO: Observe HACK we should see if this could not be integrated in californium
      * http://dev.eclipse.org/mhonarc/lists/cf-dev/msg00181.html
      */
-    private ObserveRelationContainer observeRelations = new ObserveRelationContainer();
+    private final ObserveRelationContainer observeRelations = new ObserveRelationContainer();
 
     @Override
-    public void addObserveRelation(ObserveRelation relation) {
-        super.addObserveRelation(relation);
-        observeRelations.add(relation);
+    public void addObserveRelation(final ObserveRelation relation) {
+        synchronized (observeRelations) {
+            super.addObserveRelation(relation);
+            observeRelations.add(relation);
+        }
     }
 
     @Override
-    public void removeObserveRelation(ObserveRelation relation) {
-        super.removeObserveRelation(relation);
-        observeRelations.remove(relation);
+    public void removeObserveRelation(final ObserveRelation relation) {
+        synchronized (observeRelations) {
+            super.removeObserveRelation(relation);
+            observeRelations.remove(relation);
+        }
     }
 
-    protected void notifyObserverRelationsForResource(String URI) {
-        for (ObserveRelation relation : observeRelations) {
-            if (relation.getExchange().getRequest().getOptions().getUriPathString().equals(URI)) {
-                relation.notifyObservers();
+    public void removeObserverRelations() {
+        synchronized (observeRelations) {
+            for (final Iterator<ObserveRelation> iter = observeRelations.iterator(); iter.hasNext();) {
+                final ObserveRelation relation = iter.next();
+                iter.remove();
+                super.removeObserveRelation(relation);
             }
         }
+    }
+
+    protected void notifyObserverRelationsForResource(final String URI) {
+        LwM2mPath notifyingPath = new LwM2mPath(URI);
+        synchronized (observeRelations) {
+            for (final ObserveRelation relation : observeRelations) {
+                LwM2mPath observingPath = new LwM2mPath(relation.getExchange().getRequest().getOptions()
+                        .getUriPathString());
+                if (shouldNotify(observingPath, notifyingPath)) {
+                    relation.notifyObservers();
+                }
+            }
+        }
+    }
+
+    protected static boolean shouldNotify(LwM2mPath observingPath, LwM2mPath notifyingPath) {
+        return observingPath.getObjectId() == notifyingPath.getObjectId()
+                && (observingPath.getObjectInstanceId() == null || observingPath.getObjectInstanceId() == notifyingPath
+                        .getObjectInstanceId())
+                && (observingPath.getResourceId() == null || observingPath.getResourceId() == notifyingPath
+                        .getResourceId());
     }
 }

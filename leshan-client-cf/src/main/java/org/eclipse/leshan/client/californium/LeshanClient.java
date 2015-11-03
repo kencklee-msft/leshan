@@ -17,13 +17,19 @@ package org.eclipse.leshan.client.californium;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.network.CoAPEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.leshan.client.LwM2mClient;
+import org.eclipse.leshan.client.californium.impl.CaliforniumLwM2mClientRequestPreSender;
 import org.eclipse.leshan.client.californium.impl.CaliforniumLwM2mClientRequestSender;
 import org.eclipse.leshan.client.californium.impl.ObjectResource;
 import org.eclipse.leshan.client.resource.LwM2mObjectEnabler;
@@ -39,63 +45,82 @@ import org.eclipse.leshan.util.Validate;
 public class LeshanClient implements LwM2mClient {
 
     private final CoapServer clientSideServer;
-    private final AtomicBoolean clientServerStarted = new AtomicBoolean(false);
     private final CaliforniumLwM2mClientRequestSender requestSender;
     private final List<LwM2mObjectEnabler> objectEnablers;
+    private final CaliforniumLwM2mClientRequestPreSender requestPresender;
+    private final AtomicBoolean isConnected;
 
     public LeshanClient(final InetSocketAddress serverAddress, final List<LwM2mObjectEnabler> objectEnablers) {
-        this(new InetSocketAddress("0", 0), serverAddress, new CoapServer(), objectEnablers);
+        this(new CoAPEndpoint(new InetSocketAddress("0", 0)), serverAddress, objectEnablers);
     }
 
     public LeshanClient(final InetSocketAddress clientAddress, final InetSocketAddress serverAddress,
             final List<LwM2mObjectEnabler> objectEnablers) {
-        this(clientAddress, serverAddress, new CoapServer(), objectEnablers);
+        this(new CoAPEndpoint(clientAddress), serverAddress, objectEnablers);
     }
 
-    public LeshanClient(final InetSocketAddress clientAddress, final InetSocketAddress serverAddress,
-            final CoapServer serverLocal, final List<LwM2mObjectEnabler> objectEnablers) {
+    public LeshanClient(final Endpoint endpoint, final InetSocketAddress serverAddress,
+            final List<LwM2mObjectEnabler> objectEnablers) {
 
-        Validate.notNull(clientAddress);
-        Validate.notNull(serverLocal);
+        Validate.notNull(endpoint);
         Validate.notNull(serverAddress);
         Validate.notNull(objectEnablers);
         Validate.notEmpty(objectEnablers);
 
-        final Endpoint endpoint = new CoAPEndpoint(clientAddress);
-        serverLocal.addEndpoint(endpoint);
+        isConnected = new AtomicBoolean(false);
 
-        clientSideServer = serverLocal;
+        clientSideServer = new CoapServer();
+        clientSideServer.addEndpoint(endpoint);
 
         this.objectEnablers = new ArrayList<>(objectEnablers);
-        for (LwM2mObjectEnabler enabler : objectEnablers) {
+        final Set<ObjectResource> clientObjects = new HashSet<ObjectResource>();
+        for (final LwM2mObjectEnabler enabler : objectEnablers) {
             if (clientSideServer.getRoot().getChild(Integer.toString(enabler.getId())) != null) {
                 throw new IllegalArgumentException("Trying to load Client Object of name '" + enabler.getId()
                         + "' when one was already added.");
             }
 
             final ObjectResource clientObject = new ObjectResource(enabler);
+            clientObjects.add(clientObject);
             clientSideServer.add(clientObject);
         }
 
-        requestSender = new CaliforniumLwM2mClientRequestSender(serverLocal.getEndpoint(clientAddress), serverAddress,
-                this);
+        requestPresender = new CaliforniumLwM2mClientRequestPreSender(clientObjects, this);
+        requestSender = new CaliforniumLwM2mClientRequestSender(endpoint, serverAddress, this);
     }
 
     @Override
     public void start() {
-        clientSideServer.start();
-        clientServerStarted.set(true);
+        if (isConnected.compareAndSet(false, true)) {
+            try {
+                final Map<InetSocketAddress, Future<?>> futures = clientSideServer.start();
+                for (final Future<?> f : futures.values()) {
+                    f.get();
+                }
+            } catch (ExecutionException | InterruptedException e) {
+                isConnected.set(false);
+                throw new RuntimeException("Execution exception on start", e);
+            }
+        }
     }
 
     @Override
     public void stop() {
-        clientSideServer.stop();
-        clientServerStarted.set(false);
+        if (isConnected.compareAndSet(true, false)) {
+            final Map<InetSocketAddress, Future<?>> futures = clientSideServer.stop();
+            try {
+                for (final Future<?> f : futures.values()) {
+                    f.get();
+                }
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException("Execution exception on start", e);
+            }
+        }
     }
 
     @Override
     public <T extends LwM2mResponse> T send(final UplinkRequest<T> request) {
-        if (!clientServerStarted.get()) {
+        if (!isConnected.get()) {
             throw new RuntimeException("Internal CoapServer is not started.");
         }
         return requestSender.send(request, null);
@@ -103,7 +128,7 @@ public class LeshanClient implements LwM2mClient {
 
     @Override
     public <T extends LwM2mResponse> T send(final UplinkRequest<T> request, long timeout) {
-        if (!clientServerStarted.get()) {
+        if (!isConnected.get()) {
             throw new RuntimeException("Internal CoapServer is not started.");
         }
         return requestSender.send(request, timeout);
@@ -112,9 +137,10 @@ public class LeshanClient implements LwM2mClient {
     @Override
     public <T extends LwM2mResponse> void send(final UplinkRequest<T> request,
             final ResponseCallback<T> responseCallback, final ErrorCallback errorCallback) {
-        if (!clientServerStarted.get()) {
+        if (!isConnected.get()) {
             throw new RuntimeException("Internal CoapServer is not started.");
         }
+        request.accept(requestPresender);
         requestSender.send(request, responseCallback, errorCallback);
     }
 

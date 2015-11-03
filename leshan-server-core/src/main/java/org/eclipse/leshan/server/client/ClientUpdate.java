@@ -18,6 +18,7 @@ package org.eclipse.leshan.server.client;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumSet;
 
 import org.eclipse.leshan.LinkObject;
 import org.eclipse.leshan.core.request.BindingMode;
@@ -35,11 +36,11 @@ public class ClientUpdate {
 
     private final Long lifeTimeInSec;
     private final String smsNumber;
-    private final BindingMode bindingMode;
+    private final EnumSet<BindingMode> bindingMode;
     private final LinkObject[] objectLinks;
 
-    public ClientUpdate(String registrationId, InetAddress address, Integer port, Long lifeTimeInSec, String smsNumber,
-            BindingMode bindingMode, LinkObject[] objectLinks) {
+    public ClientUpdate(final String registrationId, final InetAddress address, final Integer port, final Long lifeTimeInSec, final String smsNumber,
+    		final EnumSet<BindingMode> bindingMode, final LinkObject[] objectLinks) {
         Validate.notNull(registrationId);
         this.registrationId = registrationId;
         this.address = address;
@@ -56,17 +57,17 @@ public class ClientUpdate {
      * @param client the registered client
      * @return the updated client
      */
-    public Client updateClient(Client client) {
-        InetAddress address = this.address != null ? this.address : client.getAddress();
-        int port = this.port != null ? this.port : client.getPort();
-        LinkObject[] linkObject = this.objectLinks != null ? this.objectLinks : client.getObjectLinks();
-        long lifeTimeInSec = this.lifeTimeInSec != null ? this.lifeTimeInSec : client.getLifeTimeInSec();
-        BindingMode bindingMode = this.bindingMode != null ? this.bindingMode : client.getBindingMode();
-        String smsNumber = this.smsNumber != null ? this.smsNumber : client.getSmsNumber();
+    public Client updateClient(final Client client) {
+        final InetAddress address = this.address != null ? this.address : client.getAddress();
+        final int port = this.port != null ? this.port : client.getPort();
+        final LinkObject[] linkObject = this.objectLinks != null ? this.objectLinks : client.getObjectLinks();
+        final long lifeTimeInSec = this.lifeTimeInSec != null ? this.lifeTimeInSec : client.getLifeTimeInSec();
+        final EnumSet<BindingMode> bindingMode = this.bindingMode != null ? this.bindingMode : client.getBindingMode();
+        final String smsNumber = this.smsNumber != null ? this.smsNumber : client.getSmsNumber();
 
         // this needs to be done in any case, even if no properties have changed, in order
         // to extend the client registration's time-to-live period ...
-        Date lastUpdate = new Date();
+        final Date lastUpdate = new Date();
 
         return new Client(client.getRegistrationId(), client.getEndpoint(), address, port, client.getLwM2mVersion(),
                 lifeTimeInSec, smsNumber, bindingMode, linkObject, client.getRegistrationEndpointAddress(),
@@ -93,7 +94,7 @@ public class ClientUpdate {
         return smsNumber;
     }
 
-    public BindingMode getBindingMode() {
+    public EnumSet<BindingMode> getBindingMode() {
         return bindingMode;
     }
 

@@ -15,26 +15,54 @@
  *******************************************************************************/
 package org.eclipse.leshan.core.request;
 
+import java.util.EnumSet;
+
 /**
  * Transport binding and Queue Mode
  */
 public enum BindingMode {
 
-    /** UDP */
-    U,
+	/** UDP */
+	U,
 
-    /** UDP with Queue Mode */
-    UQ,
+	/** SMS */
+	S,
 
-    /** SMS */
-    S,
+	/** Queue Mode */
+	Q,
 
-    /** SMS with Queue Mode */
-    SQ,
+	/** TCP Server */
+	T,
 
-    /** UDP and SMS */
-    US,
+	/** TCP Client */
+	C;
 
-    /** UDP with Queue Mode and SMS */
-    UQS
+	public static EnumSet<BindingMode> getBindingMode(final BindingMode... bindingModeList) {
+		final EnumSet<BindingMode> bindingModes = EnumSet.noneOf(BindingMode.class);
+		for(final BindingMode bMode : bindingModeList) {
+			bindingModes.add(bMode);
+		}
+		return bindingModes;
+	}
+
+	public static String setToString(final EnumSet<BindingMode> bindingModes) {
+		final StringBuilder sb = new StringBuilder(); 
+		for(final BindingMode bindingMode : bindingModes) {
+			sb.append(bindingMode);
+		}
+		return sb.toString();
+	}
+
+	public static EnumSet<BindingMode> parseFromString(final String bindingModeString) {
+		final EnumSet<BindingMode> bindingModes = EnumSet.noneOf(BindingMode.class);
+		if(bindingModeString != null && !bindingModeString.isEmpty()) {
+			final String[] bindingComponent = bindingModeString.split("");
+			for(final String bm : bindingComponent) {
+				if(!bm.isEmpty()) {
+					bindingModes.add(BindingMode.valueOf(bm));
+				}
+			}
+		}
+		return bindingModes;
+	}
 }

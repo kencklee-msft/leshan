@@ -16,6 +16,7 @@
 package org.eclipse.leshan.client.californium.impl;
 
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
 
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.leshan.LinkObject;
@@ -55,23 +56,23 @@ public class CoapClientRequestBuilder implements UplinkRequestVisitor {
         coapRequest.getOptions().addUriPath("rd");
         coapRequest.getOptions().addUriQuery("ep=" + request.getEndpointName());
 
-        Long lifetime = request.getLifetime();
+        final Long lifetime = request.getLifetime();
         if (lifetime != null)
             coapRequest.getOptions().addUriQuery("lt=" + lifetime);
 
-        String smsNumber = request.getSmsNumber();
+        final String smsNumber = request.getSmsNumber();
         if (smsNumber != null)
             coapRequest.getOptions().addUriQuery("sms=" + smsNumber);
 
-        String lwVersion = request.getLwVersion();
+        final String lwVersion = request.getLwVersion();
         if (lwVersion != null)
             coapRequest.getOptions().addUriQuery("lwm2m=" + lwVersion);
 
-        BindingMode bindingMode = request.getBindingMode();
-        if (bindingMode != null)
-            coapRequest.getOptions().addUriQuery("b=" + bindingMode.toString());
+        final EnumSet<BindingMode> bindingModes = request.getBindingMode();
+        if (bindingModes != null)
+            coapRequest.getOptions().addUriQuery("b=" + BindingMode.setToString(bindingModes));
 
-        LinkObject[] linkObjects = request.getObjectLinks();
+        final LinkObject[] linkObjects = request.getObjectLinks();
         String payload;
         if (linkObjects == null)
             payload = LinkObject.serialyse(LinkFormatHelper.getClientDescription(client.getObjectEnablers(), null));
@@ -86,19 +87,19 @@ public class CoapClientRequestBuilder implements UplinkRequestVisitor {
         buildRequestSettings();
         coapRequest.getOptions().setUriPath(request.getRegistrationId());
 
-        Long lifetime = request.getLifeTimeInSec();
+        final Long lifetime = request.getLifeTimeInSec();
         if (lifetime != null)
             coapRequest.getOptions().addUriQuery("lt=" + lifetime);
 
-        String smsNumber = request.getSmsNumber();
+        final String smsNumber = request.getSmsNumber();
         if (smsNumber != null)
             coapRequest.getOptions().addUriQuery("sms=" + smsNumber);
 
-        BindingMode bindingMode = request.getBindingMode();
-        if (bindingMode != null)
-            coapRequest.getOptions().addUriQuery("b=" + bindingMode.toString());
+        final EnumSet<BindingMode> bindingModes = request.getBindingMode();
+        if (bindingModes != null)
+            coapRequest.getOptions().addUriQuery("b=" + BindingMode.setToString(bindingModes));
 
-        LinkObject[] linkObjects = request.getObjectLinks();
+        final LinkObject[] linkObjects = request.getObjectLinks();
         if (linkObjects != null)
             coapRequest.setPayload(LinkObject.serialyse(linkObjects));
     }
